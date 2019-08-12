@@ -1,4 +1,5 @@
 MODEL:
+  DEVICE: "cuda"
   META_ARCHITECTURE: "GeneralizedRCNN"
   WEIGHT: "catalog://ImageNetPretrained/MSRA/R-101"
   BACKBONE:
