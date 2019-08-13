@@ -41,5 +41,5 @@ SOLVER:
   STEPS: (120000, 160000)
   MAX_ITER: 180000
 TEST:
-  IMS_PER_BATCH: 1
+  IMS_PER_BATCH: 4
 OUTPUT_DIR: "/home/wuyuanyi/nndata/train"
