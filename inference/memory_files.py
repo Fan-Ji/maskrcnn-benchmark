@@ -1,9 +1,15 @@
+from maskrcnn_benchmark.structures.image_list import ImageList, to_image_list
 from torch.utils.data import Dataset
 import math
 import torch
-class MemoryFiles(Dataset):
-    def __init__(self, images, transforms, divisibility=0):
+class MemoryFilesCollator(object):
+    def __init__(self, divisibility):
         self.divisibility = divisibility
+    def __call__(self, images):
+        return to_image_list(images, self.divisibility)
+
+class MemoryFiles(Dataset):
+    def __init__(self, images, transforms):
         self.images = images
         self.transforms = transforms
 
@@ -13,16 +19,6 @@ class MemoryFiles(Dataset):
             img = t(img, None)
             if isinstance(img, tuple):
                 img = img[0]
-        #TODO pre-processing to improve efficiency??
-        if self.divisibility:
-            stride = self.divisibility
-            img_sz = img.shape
-            sz = list(img.shape)
-            sz[1] = int(math.ceil(sz[1] / stride) * stride)
-            sz[2] = int(math.ceil(sz[2] / stride) * stride)
-            ret = torch.zeros(sz)
-            ret[:img_sz[0], :img_sz[1], :img_sz[2]].copy_(img)
-            return ret
         return img
 
     def __len__(self):

@@ -4,6 +4,7 @@ import time
 import torch
 import logging
 
+from inference.memory_files import MemoryFilesCollator
 from maskrcnn_benchmark.modeling.roi_heads.mask_head.inference import Masker
 
 from maskrcnn_benchmark.structures.image_list import to_image_list
@@ -56,14 +57,15 @@ class InferenceService(object):
         self.transforms = None if self.cfg.TEST.BBOX_AUG.ENABLED else self.build_inference_transform()
 
     # Image shape must be the same within one batch
-    def process(self, images, image_shape):
+    def process(self, images, image_shape, original_filenames=None):
         with self.process_lock:
             start_time = time.time()
             dataloader = DataLoader(
-                MemoryFiles(images, self.transforms, self.cfg.DATALOADER.SIZE_DIVISIBILITY),
+                MemoryFiles(images, self.transforms),
                 batch_size=self.conf.batch_size,
                 shuffle=False,
                 num_workers=self.conf.n_cpu,
+                collate_fn=MemoryFilesCollator(self.cfg.DATALOADER.SIZE_DIVISIBILITY)
             )
             cpu_device = torch.device("cpu")
             detections_list = []
@@ -80,16 +82,20 @@ class InferenceService(object):
             inference_time = datetime.timedelta(seconds=time.time() - start_time)
             self.logger.info(f"Inferred batch (n={len(images)}). Inference time={inference_time}. Time per frame={inference_time/len(images)}")
         # CPU task can be executed in parallel
-        return self.extract_information(detections_list, image_shape)
+        return self.extract_information(detections_list, image_shape, original_filenames)
 
-    def extract_information(self, detections_in_all_images, image_shape):
+    def extract_information(self, detections_in_all_images, image_shape, original_filenames):
         cropped_threshold = self.conf.cropped_threshold
         result = []
         masker = Masker(threshold=0.5, padding=1)
 
         for img_index, detections in enumerate(detections_in_all_images):
-            detections.resize(image_shape)
+            # The resize does not handle crop: the padding area was still there so the bounding box shrink to the left!?
+            # It seems like the original implementation stored un-padded size!
+            # Problem solved. See the wiki https://github.com/nncrystals/maskrcnn-benchmark/wiki/Inference-procedures
+            detections = detections.resize(image_shape)
             masks = detections.get_field("mask")
+            # Caution: if the mask offsets, it is because the bounding box!
             masks = masker(masks.expand(1, -1, -1, -1, -1), detections)
             masks = masks[0]
 
@@ -106,12 +112,11 @@ class InferenceService(object):
                 rle["counts"] = rle["counts"].decode("utf-8")
             for i in range(num_detections):
                 result.append({
-                    "img": img_index,
-                    "bboxes": bbox[i],
-                    "scores":scores[i],
-                    "labels": labels[i],
-                    #"masks": masks[i],
-                    "rles":rles,
+                    "img": img_index if original_filenames is None else original_filenames[img_index],
+                    "bbox": bbox[i],
+                    "score":scores[i],
+                    "label": labels[i],
+                    "rle":rles[i],
                     "mode": mode,
                     "is_cropped": None}
                 )
