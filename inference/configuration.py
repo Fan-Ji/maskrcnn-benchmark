@@ -5,6 +5,7 @@ class Configuration(object):
         self.weight_file = "/home/wuyuanyi/nndata/train/model_final.pth"
         self.batch_size = 4
         self.n_cpu = 4
+        self.n_info_extraction_workers = 2
 
         # Server configurations
         self.server_ip = "0.0.0.0"

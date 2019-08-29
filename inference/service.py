@@ -57,7 +57,7 @@ class InferenceService(object):
         self.transforms = None if self.cfg.TEST.BBOX_AUG.ENABLED else self.build_inference_transform()
 
     # Image shape must be the same within one batch
-    def process(self, images, image_shape, original_filenames=None):
+    def process(self, images):
         with self.process_lock:
             start_time = time.time()
             dataloader = DataLoader(
@@ -82,44 +82,45 @@ class InferenceService(object):
             inference_time = datetime.timedelta(seconds=time.time() - start_time)
             self.logger.info(f"Inferred batch (n={len(images)}). Inference time={inference_time}. Time per frame={inference_time/len(images)}")
         # CPU task can be executed in parallel
-        return self.extract_information(detections_list, image_shape, original_filenames)
-
-    def extract_information(self, detections_in_all_images, image_shape, original_filenames):
-        cropped_threshold = self.conf.cropped_threshold
-        result = []
+        return detections_list
+    def extract_information_one(self, detections, image_shape, img_index, original_filenames=None, options=None):
         masker = Masker(threshold=0.5, padding=1)
+        # The resize does not handle crop: the padding area was still there so the bounding box shrink to the left!?
+        # It seems like the original implementation stored un-padded size!
+        # Problem solved. See the wiki https://github.com/nncrystals/maskrcnn-benchmark/wiki/Inference-procedures
+        detections = detections.resize(image_shape)
+        masks = detections.get_field("mask")
+        # Caution: if the mask offsets, it is because the bounding box!
+        masks = masker(masks.expand(1, -1, -1, -1, -1), detections)
+        masks = masks[0]
+
+        num_detections = len(detections)
+        mode = detections.mode
+        bbox = detections.bbox.tolist()
+        scores = detections.extra_fields["scores"].tolist()
+        labels = detections.extra_fields["labels"].tolist()
+        rles = [
+            mask_util.encode(np.array(mask[0, :, :, np.newaxis], order="F"))[0]
+            for mask in masks
+        ]
+        for rle in rles:
+            rle["counts"] = rle["counts"].decode("utf-8")
+        for i in range(num_detections):
+            return ({
+                "img": img_index if original_filenames is None else original_filenames[img_index],
+                "bbox": bbox[i],
+                "score": scores[i],
+                "label": labels[i],
+                "rle": rles[i],
+                "mode": mode,
+                "area": masks[i].sum(),
+                "is_cropped": None}
+            )
+    def extract_information(self, detections_in_all_images, image_shape, original_filenames=None, options=None):
+        result = []
 
         for img_index, detections in enumerate(detections_in_all_images):
-            # The resize does not handle crop: the padding area was still there so the bounding box shrink to the left!?
-            # It seems like the original implementation stored un-padded size!
-            # Problem solved. See the wiki https://github.com/nncrystals/maskrcnn-benchmark/wiki/Inference-procedures
-            detections = detections.resize(image_shape)
-            masks = detections.get_field("mask")
-            # Caution: if the mask offsets, it is because the bounding box!
-            masks = masker(masks.expand(1, -1, -1, -1, -1), detections)
-            masks = masks[0]
-
-            num_detections = len(detections)
-            mode = detections.mode
-            bbox = detections.bbox.tolist()
-            scores = detections.extra_fields["scores"].tolist()
-            labels = detections.extra_fields["labels"].tolist()
-            rles = [
-                mask_util.encode(np.array(mask[0, :, :, np.newaxis], order="F"))[0]
-                for mask in masks
-            ]
-            for rle in rles:
-                rle["counts"] = rle["counts"].decode("utf-8")
-            for i in range(num_detections):
-                result.append({
-                    "img": img_index if original_filenames is None else original_filenames[img_index],
-                    "bbox": bbox[i],
-                    "score":scores[i],
-                    "label": labels[i],
-                    "rle":rles[i],
-                    "mode": mode,
-                    "is_cropped": None}
-                )
+            result.append(self.extract_information_one(detections, image_shape, img_index, original_filenames, options))
         return result
 
     def build_inference_transform(self):
@@ -132,6 +133,4 @@ class InferenceService(object):
             mean=cfg.INPUT.PIXEL_MEAN, std=cfg.INPUT.PIXEL_STD, to_bgr255=to_bgr255
         )
         return [T.Resize(min_size, max_size), T.ToTensor(), normalize_transform]
-
-
 
