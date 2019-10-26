@@ -14,8 +14,8 @@ class InferenceStub(object):
     Args:
       channel: A grpc.Channel.
     """
-    self.StreamInference = channel.stream_stream(
-        '/Inference/StreamInference',
+    self.Inference = channel.unary_unary(
+        '/Inference/Inference',
         request_serializer=inference__service__pb2.ImageBatchRequest.SerializeToString,
         response_deserializer=inference__service__pb2.InferenceResult.FromString,
         )
@@ -25,7 +25,7 @@ class InferenceServicer(object):
   # missing associated documentation comment in .proto file
   pass
 
-  def StreamInference(self, request_iterator, context):
+  def Inference(self, request, context):
     # missing associated documentation comment in .proto file
     pass
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -35,8 +35,8 @@ class InferenceServicer(object):
 
 def add_InferenceServicer_to_server(servicer, server):
   rpc_method_handlers = {
-      'StreamInference': grpc.stream_stream_rpc_method_handler(
-          servicer.StreamInference,
+      'Inference': grpc.unary_unary_rpc_method_handler(
+          servicer.Inference,
           request_deserializer=inference__service__pb2.ImageBatchRequest.FromString,
           response_serializer=inference__service__pb2.InferenceResult.SerializeToString,
       ),

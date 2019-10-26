@@ -1,3 +1,4 @@
+import queue
 import time
 
 import grpc
@@ -6,15 +7,22 @@ from concurrent import futures
 import sys
 import logging
 import os
-import multiprocessing as mp
+import threading
 import io
-
+import multiprocessing
+import random
+import torch
+import torchvision
 from PIL import Image
+from torch.utils.data.dataloader import DataLoader
+
+from inference.memory_files import MemoryFiles, MemoryFilesCollator
 
 import inference.proto.inference_service_pb2_grpc as grpc_service
 import inference.proto.inference_service_pb2 as grpc_def
 from inference.configuration import cfg
 from inference.service import InferenceService
+import torch.multiprocessing as mp
 
 # logging.getLogger().setLevel(logging.INFO)
 logging.basicConfig(level=logging.INFO)
@@ -25,76 +33,127 @@ logger.setLevel(logging.INFO)
 class InferenceServiceImpl(grpc_service.InferenceServicer):
     def __init__(self):
         super(InferenceServiceImpl, self).__init__()
-        self.inference_service = InferenceService(cfg, logger.getChild("Internal"))
-        # self.inference_queue = mp.Queue()
-        # self.inference_workers = [mp.Process(target=self.inference_worker_task)]
-        # self.extraction_queue = mp.Queue()
-        # self.extraction_workers = [mp.Process]
-        # self.image_shape = (800,600) #TODO: hardcoded
-        # self.info_extraction_queue = mp.Queue()
-        # self.info_extraction_workers = mp.Pool(cfg.n_info_extraction_workers)
-        # self.info_extraction_workers.apply()
+        self.inference_batch_max_size = 8
+        self.raw_image_queue = mp.Queue()
+        self.inference_process = mp.Process(target=self.inference_task,
+                                            args=(self.raw_image_queue, self.inference_batch_max_size))
+        self.transforms = InferenceService.build_inference_transform(InferenceService.load_cfg(cfg))
+        self.logger = logging.getLogger("GRPCInferenceGenerator")
 
-    def StreamInference(self, request_iterator, context):
-        meta = None
-        req: grpc_def.ImageBatchRequest
-        result_collection = []
-        processed_images = 0
-        for req in request_iterator:
-            # First request: initialize options
-            if meta is None:
-                if req.opt is None:
-                    context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
-                    context.set_details("First request must contain inference options")
-                    return
+        self.inference_process.start()
 
-                meta = {}
-                opt = req.opt
-                meta["exclude_cropped"] = opt.exclude_cropped
-                meta["area_dist"] = opt.area_dist
-                meta["ellipse_dist"] = opt.ellipse_dist
-                meta["image_batch_size"] = opt.image_batch_size
-                logger.info(f"Request initialized {meta}")
+    def Inference(self, req: grpc_def.ImageBatchRequest, context):
+        if req.opt is None:
+            context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
+            context.set_details("Request must contain inference options")
+            return
 
-            num_images = len(req.images)
-            if num_images > 0:
-                logger.info(f"Received {num_images}. Previously processed {processed_images} images")
-            else:
-                logger.info(f"No image received. Previously processed {processed_images} images")
-                continue
+        num_images = len(req.images)
+        if num_images == 0:
+            return
+        # Get images from request
+        image_names = []
+        img: Image.Image
+        image_tensors = []
+        req_img: grpc_def.Image
+        for req_img in req.images:
+            try:
+                img: Image.Image = Image.open(io.BytesIO(req_img.images_data))
+                img = img.convert("RGB")
+                image_shape = img.size
+                for t in self.transforms:
+                    img = t(img, None)
+                    if isinstance(img, tuple):
+                        img = img[0]
+                image_tensors.append(img)
+                image_names.append(req_img.name)
+            except Exception as e:
+                self.logger.warning(f"Failed to process image, skip: {e}")
 
-            # Get images from request
-            image_file_content = []
-            for img in req.images:
-                try:
-                    image_file_content.append(io.BytesIO(img))
-                except:
-                    logger.warn("Failed to process image, skip")
+        response_pipe, send_pipe = mp.Pipe(False)
 
-            images = [Image.open(f) for f in image_file_content]
-            # self.inference_queue.put(*images)
-            results = self.inference_service.process(images)
-            # TODO use workers to parallalize cpu processing
-            # TODO decouple request to serve multiple clients!
-            extracted_result = self.inference_service.extract_information(results, images[0].size, options=meta)
-            result_collection.extend(extracted_result)
-            processed_images += num_images
-            if processed_images >= meta["image_batch_size"]:
-                result = grpc_def.InferenceResult()
-                result.result.processed_images = processed_images
-                # TODO: result.sample_images
-                for r in result_collection:
-                    detection = grpc_def.Detection()
-                    detection.area = r["area"]
-                    result.result.detections.append(detection)
-                logger.info("Sending back results")
-                yield result
-                processed_images = 0
-                result_collection.clear()
+        # send request to background process
+        self.raw_image_queue.put((image_tensors, send_pipe))
+
+        # wait for response from the background process
+        response = response_pipe.recv()
+        ret = grpc_def.InferenceResult()
+        for (result, name) in zip(response, image_names):
+            extracted_objects_in_one_image = InferenceService.extract_information_one(result, image_shape, name)
+            result_in_one_image = grpc_def.ResultPerImage()
+            for extracted in extracted_objects_in_one_image:
+
+                detection = grpc_def.Detection()
+                detection.confidence = extracted["score"]
+                detection.category = extracted["label"]
+                detection.cropped = bool(extracted["is_cropped"])
+                rle = extracted["rle"]
+                detection.rle.size.extend(rle["size"])
+                detection.rle.counts = rle["counts"]
+
+                bbox = extracted["bbox"]
+                detection.bbox.xlt = bbox[0]
+                detection.bbox.ylt = bbox[1]
+                detection.bbox.xrb = bbox[2]
+                detection.bbox.yrb = bbox[3]
+
+                result_in_one_image.detections.append(detection)
+                result_in_one_image.image_id = name
+            ret.result.append(result_in_one_image)
+
+        n = req.opt.num_image_returned
+        if n == 0:
+            pass
+        elif n == -1:
+            ret.returned_images.extend(req.images)
+        else:
+            ret.returned_images.extend(random.choices(req.images, k=n))
+        return ret
+
+    @staticmethod
+    def inference_task(inference_queue: mp.Queue, batch_max_size: int):
+        inference_service = InferenceService(cfg)
+
+        while True:
+            images: list
+            images, send_pipe = inference_queue.get(True)
+            send_pipes = [send_pipe]
+            send_pipe_num_images = [len(images)]
+            # get more
+            while True:
+                if len(images) >= batch_max_size:
+                    break
+                else:
+                    try:
+                        images_more, send_pipe_more = inference_queue.get(False)
+                        images.extend(images_more)
+                        send_pipes.append(send_pipe_more)
+                        send_pipe_num_images.append(len(images_more))
+                    except Exception:
+                        break
+
+            dataloader = DataLoader(
+                MemoryFiles(images, None),
+                shuffle=False,
+                num_workers=1,
+                batch_size=batch_max_size,
+                collate_fn=MemoryFilesCollator(inference_service.cfg.DATALOADER.SIZE_DIVISIBILITY)
+            )
+            results = []
+            for batch in dataloader:
+                result = inference_service.run_inference(batch)
+                results.extend(result)
+            pipe: multiprocessing.connection.Connection
+            for (pipe, num_imgs) in zip(send_pipes, send_pipe_num_images):
+                pipe.send(results[:num_imgs])
+                del results[:num_imgs]
 
     @staticmethod
     def serve():
-        server = grpc.server(futures.ThreadPoolExecutor(max_workers=2))
+        server = grpc.server(futures.ThreadPoolExecutor(max_workers=5), options=[
+            ('grpc.max_send_message_length', 50 * 1024 * 1024),
+            ('grpc.max_receive_message_length', 50 * 1024 * 1024)
+        ])
         grpc_service.add_InferenceServicer_to_server(InferenceServiceImpl(), server)
         server.add_insecure_port(f"{cfg.server_ip}:{cfg.server_port}")
         server.start()
@@ -106,22 +165,5 @@ class InferenceServiceImpl(grpc_service.InferenceServicer):
             server.stop(0)
 
 
-# def inference_worker_task(obj: InferenceServiceImpl):
-#     while True:
-#         imgs = []
-#         trial_get = obj.inference_queue.get()
-#         imgs.append(trial_get)
-#         remaining = obj.inference_queue.qsize()
-#         for i in range(remaining):
-#             try:
-#                 imgs.append(obj.inference_queue.get_nowait())
-#             except:
-#                 pass
-#         results = obj.inference_service.process(imgs)
-#         obj.extraction_queue.put(*results)
-# def extraction_worker_task(obj: InferenceServiceImpl):
-#     while True:
-#         detections = obj.extraction_queue.get()
-#         obj.inference_service.extract_information_one(detections, obj.image_shape,  )
 if __name__ == '__main__':
     InferenceServiceImpl.serve()

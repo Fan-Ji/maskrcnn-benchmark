@@ -15,6 +15,8 @@ class MemoryFiles(Dataset):
 
     def __getitem__(self, index):
         img = self.images[index]
+        if self.transforms is None:
+            return img
         for t in self.transforms:
             img = t(img, None)
             if isinstance(img, tuple):

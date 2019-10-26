@@ -36,5 +36,5 @@ dist/
 /models
 /output
 
-log.txt
-config.yaml
+env
+venv

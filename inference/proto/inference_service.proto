@@ -1,37 +1,44 @@
 syntax = "proto3";
 
 message InferenceOptions {
-    bool exclude_cropped = 1;
-    bool area_dist = 2;
-    bool ellipse_dist = 3;
-    int32 image_batch_size = 4;
+    // define the randomly picked images that are sent back for visualization. 0 = no return; -1 = return all of them;
+    int32 num_image_returned = 1;
+}
+message Image {
+    bytes images_data = 1;
+    string name = 2;
 }
 message ImageBatchRequest {
     InferenceOptions opt = 1;
-    repeated bytes images = 2;
-    int32 num_sample_images = 3;
+    repeated Image images = 2;
 }
 
+message Rectangle {
+    double xlt = 1;
+    double ylt = 2;
+    double xrb = 3;
+    double yrb = 4;
+}
+message RLE {
+    repeated int32 size = 1;
+    string counts = 2;
+}
 message Detection {
-    double center_x = 1;
-    double center_y = 2;
+    RLE rle = 1;
+    bool cropped = 2;
+    int32 category = 3;
+    double confidence = 4;
+    Rectangle bbox = 5;
+}
 
-    double area = 3;
-    Ellipse ellipse = 4;
-    bool cropped = 5;
-}
-message Ellipse {
-    double long_axis = 1;
-    double short_axis = 2;
-}
-message Result {
-    int32 processed_images = 1;
+message ResultPerImage {
+    string image_id = 1;
     repeated Detection detections = 2;
 }
 message InferenceResult {
-    repeated bytes sample_images = 1;
-    Result result = 2;
+    repeated Image returned_images = 1;
+    repeated ResultPerImage result = 2;
 }
 service Inference {
-    rpc StreamInference(stream ImageBatchRequest) returns (stream InferenceResult);
+    rpc Inference(ImageBatchRequest) returns (InferenceResult);
 }

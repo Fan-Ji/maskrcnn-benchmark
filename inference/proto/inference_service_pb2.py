@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\x17inference_service.proto\"n\n\x10InferenceOptions\x12\x17\n\x0f\x65xclude_cropped\x18\x01 \x01(\x08\x12\x11\n\tarea_dist\x18\x02 \x01(\x08\x12\x14\n\x0c\x65llipse_dist\x18\x03 \x01(\x08\x12\x18\n\x10image_batch_size\x18\x04 \x01(\x05\"^\n\x11ImageBatchRequest\x12\x1e\n\x03opt\x18\x01 \x01(\x0b\x32\x11.InferenceOptions\x12\x0e\n\x06images\x18\x02 \x03(\x0c\x12\x19\n\x11num_sample_images\x18\x03 \x01(\x05\"i\n\tDetection\x12\x10\n\x08\x63\x65nter_x\x18\x01 \x01(\x01\x12\x10\n\x08\x63\x65nter_y\x18\x02 \x01(\x01\x12\x0c\n\x04\x61rea\x18\x03 \x01(\x01\x12\x19\n\x07\x65llipse\x18\x04 \x01(\x0b\x32\x08.Ellipse\x12\x0f\n\x07\x63ropped\x18\x05 \x01(\x08\"0\n\x07\x45llipse\x12\x11\n\tlong_axis\x18\x01 \x01(\x01\x12\x12\n\nshort_axis\x18\x02 \x01(\x01\"B\n\x06Result\x12\x18\n\x10processed_images\x18\x01 \x01(\x05\x12\x1e\n\ndetections\x18\x02 \x03(\x0b\x32\n.Detection\"A\n\x0fInferenceResult\x12\x15\n\rsample_images\x18\x01 \x03(\x0c\x12\x17\n\x06result\x18\x02 \x01(\x0b\x32\x07.Result2H\n\tInference\x12;\n\x0fStreamInference\x12\x12.ImageBatchRequest\x1a\x10.InferenceResult(\x01\x30\x01\x62\x06proto3')
+  serialized_pb=_b('\n\x17inference_service.proto\".\n\x10InferenceOptions\x12\x1a\n\x12num_image_returned\x18\x01 \x01(\x05\"*\n\x05Image\x12\x13\n\x0bimages_data\x18\x01 \x01(\x0c\x12\x0c\n\x04name\x18\x02 \x01(\t\"K\n\x11ImageBatchRequest\x12\x1e\n\x03opt\x18\x01 \x01(\x0b\x32\x11.InferenceOptions\x12\x16\n\x06images\x18\x02 \x03(\x0b\x32\x06.Image\"?\n\tRectangle\x12\x0b\n\x03xlt\x18\x01 \x01(\x01\x12\x0b\n\x03ylt\x18\x02 \x01(\x01\x12\x0b\n\x03xrb\x18\x03 \x01(\x01\x12\x0b\n\x03yrb\x18\x04 \x01(\x01\"#\n\x03RLE\x12\x0c\n\x04size\x18\x01 \x03(\x05\x12\x0e\n\x06\x63ounts\x18\x02 \x01(\t\"o\n\tDetection\x12\x11\n\x03rle\x18\x01 \x01(\x0b\x32\x04.RLE\x12\x0f\n\x07\x63ropped\x18\x02 \x01(\x08\x12\x10\n\x08\x63\x61tegory\x18\x03 \x01(\x05\x12\x12\n\nconfidence\x18\x04 \x01(\x01\x12\x18\n\x04\x62\x62ox\x18\x05 \x01(\x0b\x32\n.Rectangle\"B\n\x0eResultPerImage\x12\x10\n\x08image_id\x18\x01 \x01(\t\x12\x1e\n\ndetections\x18\x02 \x03(\x0b\x32\n.Detection\"S\n\x0fInferenceResult\x12\x1f\n\x0freturned_images\x18\x01 \x03(\x0b\x32\x06.Image\x12\x1f\n\x06result\x18\x02 \x03(\x0b\x32\x0f.ResultPerImage2>\n\tInference\x12\x31\n\tInference\x12\x12.ImageBatchRequest\x1a\x10.InferenceResultb\x06proto3')
 )
 
 
@@ -34,29 +34,8 @@ _INFERENCEOPTIONS = _descriptor.Descriptor(
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='exclude_cropped', full_name='InferenceOptions.exclude_cropped', index=0,
-      number=1, type=8, cpp_type=7, label=1,
-      has_default_value=False, default_value=False,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='area_dist', full_name='InferenceOptions.area_dist', index=1,
-      number=2, type=8, cpp_type=7, label=1,
-      has_default_value=False, default_value=False,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='ellipse_dist', full_name='InferenceOptions.ellipse_dist', index=2,
-      number=3, type=8, cpp_type=7, label=1,
-      has_default_value=False, default_value=False,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='image_batch_size', full_name='InferenceOptions.image_batch_size', index=3,
-      number=4, type=5, cpp_type=1, label=1,
+      name='num_image_returned', full_name='InferenceOptions.num_image_returned', index=0,
+      number=1, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -74,7 +53,45 @@ _INFERENCEOPTIONS = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=27,
-  serialized_end=137,
+  serialized_end=73,
+)
+
+
+_IMAGE = _descriptor.Descriptor(
+  name='Image',
+  full_name='Image',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='images_data', full_name='Image.images_data', index=0,
+      number=1, type=12, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b(""),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='name', full_name='Image.name', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=75,
+  serialized_end=117,
 )
 
 
@@ -94,148 +111,6 @@ _IMAGEBATCHREQUEST = _descriptor.Descriptor(
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
       name='images', full_name='ImageBatchRequest.images', index=1,
-      number=2, type=12, cpp_type=9, label=3,
-      has_default_value=False, default_value=[],
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='num_sample_images', full_name='ImageBatchRequest.num_sample_images', index=2,
-      number=3, type=5, cpp_type=1, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=139,
-  serialized_end=233,
-)
-
-
-_DETECTION = _descriptor.Descriptor(
-  name='Detection',
-  full_name='Detection',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='center_x', full_name='Detection.center_x', index=0,
-      number=1, type=1, cpp_type=5, label=1,
-      has_default_value=False, default_value=float(0),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='center_y', full_name='Detection.center_y', index=1,
-      number=2, type=1, cpp_type=5, label=1,
-      has_default_value=False, default_value=float(0),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='area', full_name='Detection.area', index=2,
-      number=3, type=1, cpp_type=5, label=1,
-      has_default_value=False, default_value=float(0),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='ellipse', full_name='Detection.ellipse', index=3,
-      number=4, type=11, cpp_type=10, label=1,
-      has_default_value=False, default_value=None,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='cropped', full_name='Detection.cropped', index=4,
-      number=5, type=8, cpp_type=7, label=1,
-      has_default_value=False, default_value=False,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=235,
-  serialized_end=340,
-)
-
-
-_ELLIPSE = _descriptor.Descriptor(
-  name='Ellipse',
-  full_name='Ellipse',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='long_axis', full_name='Ellipse.long_axis', index=0,
-      number=1, type=1, cpp_type=5, label=1,
-      has_default_value=False, default_value=float(0),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='short_axis', full_name='Ellipse.short_axis', index=1,
-      number=2, type=1, cpp_type=5, label=1,
-      has_default_value=False, default_value=float(0),
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=342,
-  serialized_end=390,
-)
-
-
-_RESULT = _descriptor.Descriptor(
-  name='Result',
-  full_name='Result',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='processed_images', full_name='Result.processed_images', index=0,
-      number=1, type=5, cpp_type=1, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR),
-    _descriptor.FieldDescriptor(
-      name='detections', full_name='Result.detections', index=1,
       number=2, type=11, cpp_type=10, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
@@ -253,28 +128,139 @@ _RESULT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=392,
-  serialized_end=458,
+  serialized_start=119,
+  serialized_end=194,
 )
 
 
-_INFERENCERESULT = _descriptor.Descriptor(
-  name='InferenceResult',
-  full_name='InferenceResult',
+_RECTANGLE = _descriptor.Descriptor(
+  name='Rectangle',
+  full_name='Rectangle',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='sample_images', full_name='InferenceResult.sample_images', index=0,
-      number=1, type=12, cpp_type=9, label=3,
+      name='xlt', full_name='Rectangle.xlt', index=0,
+      number=1, type=1, cpp_type=5, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='ylt', full_name='Rectangle.ylt', index=1,
+      number=2, type=1, cpp_type=5, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='xrb', full_name='Rectangle.xrb', index=2,
+      number=3, type=1, cpp_type=5, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='yrb', full_name='Rectangle.yrb', index=3,
+      number=4, type=1, cpp_type=5, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=196,
+  serialized_end=259,
+)
+
+
+_RLE = _descriptor.Descriptor(
+  name='RLE',
+  full_name='RLE',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='size', full_name='RLE.size', index=0,
+      number=1, type=5, cpp_type=1, label=3,
       has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='result', full_name='InferenceResult.result', index=1,
-      number=2, type=11, cpp_type=10, label=1,
+      name='counts', full_name='RLE.counts', index=1,
+      number=2, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=261,
+  serialized_end=296,
+)
+
+
+_DETECTION = _descriptor.Descriptor(
+  name='Detection',
+  full_name='Detection',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='rle', full_name='Detection.rle', index=0,
+      number=1, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='cropped', full_name='Detection.cropped', index=1,
+      number=2, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='category', full_name='Detection.category', index=2,
+      number=3, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='confidence', full_name='Detection.confidence', index=3,
+      number=4, type=1, cpp_type=5, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='bbox', full_name='Detection.bbox', index=4,
+      number=5, type=11, cpp_type=10, label=1,
       has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -291,19 +277,100 @@ _INFERENCERESULT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=460,
-  serialized_end=525,
+  serialized_start=298,
+  serialized_end=409,
+)
+
+
+_RESULTPERIMAGE = _descriptor.Descriptor(
+  name='ResultPerImage',
+  full_name='ResultPerImage',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='image_id', full_name='ResultPerImage.image_id', index=0,
+      number=1, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=_b("").decode('utf-8'),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='detections', full_name='ResultPerImage.detections', index=1,
+      number=2, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=411,
+  serialized_end=477,
+)
+
+
+_INFERENCERESULT = _descriptor.Descriptor(
+  name='InferenceResult',
+  full_name='InferenceResult',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='returned_images', full_name='InferenceResult.returned_images', index=0,
+      number=1, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='result', full_name='InferenceResult.result', index=1,
+      number=2, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=479,
+  serialized_end=562,
 )
 
 _IMAGEBATCHREQUEST.fields_by_name['opt'].message_type = _INFERENCEOPTIONS
-_DETECTION.fields_by_name['ellipse'].message_type = _ELLIPSE
-_RESULT.fields_by_name['detections'].message_type = _DETECTION
-_INFERENCERESULT.fields_by_name['result'].message_type = _RESULT
+_IMAGEBATCHREQUEST.fields_by_name['images'].message_type = _IMAGE
+_DETECTION.fields_by_name['rle'].message_type = _RLE
+_DETECTION.fields_by_name['bbox'].message_type = _RECTANGLE
+_RESULTPERIMAGE.fields_by_name['detections'].message_type = _DETECTION
+_INFERENCERESULT.fields_by_name['returned_images'].message_type = _IMAGE
+_INFERENCERESULT.fields_by_name['result'].message_type = _RESULTPERIMAGE
 DESCRIPTOR.message_types_by_name['InferenceOptions'] = _INFERENCEOPTIONS
+DESCRIPTOR.message_types_by_name['Image'] = _IMAGE
 DESCRIPTOR.message_types_by_name['ImageBatchRequest'] = _IMAGEBATCHREQUEST
+DESCRIPTOR.message_types_by_name['Rectangle'] = _RECTANGLE
+DESCRIPTOR.message_types_by_name['RLE'] = _RLE
 DESCRIPTOR.message_types_by_name['Detection'] = _DETECTION
-DESCRIPTOR.message_types_by_name['Ellipse'] = _ELLIPSE
-DESCRIPTOR.message_types_by_name['Result'] = _RESULT
+DESCRIPTOR.message_types_by_name['ResultPerImage'] = _RESULTPERIMAGE
 DESCRIPTOR.message_types_by_name['InferenceResult'] = _INFERENCERESULT
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
@@ -314,12 +381,33 @@ InferenceOptions = _reflection.GeneratedProtocolMessageType('InferenceOptions', 
   })
 _sym_db.RegisterMessage(InferenceOptions)
 
+Image = _reflection.GeneratedProtocolMessageType('Image', (_message.Message,), {
+  'DESCRIPTOR' : _IMAGE,
+  '__module__' : 'inference_service_pb2'
+  # @@protoc_insertion_point(class_scope:Image)
+  })
+_sym_db.RegisterMessage(Image)
+
 ImageBatchRequest = _reflection.GeneratedProtocolMessageType('ImageBatchRequest', (_message.Message,), {
   'DESCRIPTOR' : _IMAGEBATCHREQUEST,
   '__module__' : 'inference_service_pb2'
   # @@protoc_insertion_point(class_scope:ImageBatchRequest)
   })
 _sym_db.RegisterMessage(ImageBatchRequest)
+
+Rectangle = _reflection.GeneratedProtocolMessageType('Rectangle', (_message.Message,), {
+  'DESCRIPTOR' : _RECTANGLE,
+  '__module__' : 'inference_service_pb2'
+  # @@protoc_insertion_point(class_scope:Rectangle)
+  })
+_sym_db.RegisterMessage(Rectangle)
+
+RLE = _reflection.GeneratedProtocolMessageType('RLE', (_message.Message,), {
+  'DESCRIPTOR' : _RLE,
+  '__module__' : 'inference_service_pb2'
+  # @@protoc_insertion_point(class_scope:RLE)
+  })
+_sym_db.RegisterMessage(RLE)
 
 Detection = _reflection.GeneratedProtocolMessageType('Detection', (_message.Message,), {
   'DESCRIPTOR' : _DETECTION,
@@ -328,19 +416,12 @@ Detection = _reflection.GeneratedProtocolMessageType('Detection', (_message.Mess
   })
 _sym_db.RegisterMessage(Detection)
 
-Ellipse = _reflection.GeneratedProtocolMessageType('Ellipse', (_message.Message,), {
-  'DESCRIPTOR' : _ELLIPSE,
+ResultPerImage = _reflection.GeneratedProtocolMessageType('ResultPerImage', (_message.Message,), {
+  'DESCRIPTOR' : _RESULTPERIMAGE,
   '__module__' : 'inference_service_pb2'
-  # @@protoc_insertion_point(class_scope:Ellipse)
+  # @@protoc_insertion_point(class_scope:ResultPerImage)
   })
-_sym_db.RegisterMessage(Ellipse)
-
-Result = _reflection.GeneratedProtocolMessageType('Result', (_message.Message,), {
-  'DESCRIPTOR' : _RESULT,
-  '__module__' : 'inference_service_pb2'
-  # @@protoc_insertion_point(class_scope:Result)
-  })
-_sym_db.RegisterMessage(Result)
+_sym_db.RegisterMessage(ResultPerImage)
 
 InferenceResult = _reflection.GeneratedProtocolMessageType('InferenceResult', (_message.Message,), {
   'DESCRIPTOR' : _INFERENCERESULT,
@@ -357,12 +438,12 @@ _INFERENCE = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   serialized_options=None,
-  serialized_start=527,
-  serialized_end=599,
+  serialized_start=564,
+  serialized_end=626,
   methods=[
   _descriptor.MethodDescriptor(
-    name='StreamInference',
-    full_name='Inference.StreamInference',
+    name='Inference',
+    full_name='Inference.Inference',
     index=0,
     containing_service=None,
     input_type=_IMAGEBATCHREQUEST,
